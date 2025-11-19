@@ -21,6 +21,12 @@ class SpeciesTraits:
     can_move: bool = False
     movement_range: int = 1  # How many cells they can move
     movement_cost: int = 5   # Energy cost per move
+    movement_strategy: str = "random"  # "random", "energy_seeking", "flee", "hunt"
+    
+    # Predator/Prey traits
+    is_predator: bool = False  # Can consume other cells
+    hunting_efficiency: float = 0.8  # Energy transfer rate when consuming
+    can_be_consumed: bool = True  # Can be eaten by predators
     
     # Survival traits
     overcrowding_tolerance: int = 3  # Max neighbors before stress
@@ -70,6 +76,10 @@ class Species:
             can_move=self.traits.can_move if random.random() > 0.1 else not self.traits.can_move,
             movement_range=self._mutate_value(self.traits.movement_range, 1),
             movement_cost=self._mutate_value(self.traits.movement_cost, 2),
+            movement_strategy=self.traits.movement_strategy,  # Strategy rarely mutates
+            is_predator=self.traits.is_predator if random.random() > 0.05 else not self.traits.is_predator,
+            hunting_efficiency=self._mutate_value(self.traits.hunting_efficiency, 0.1, is_float=True),
+            can_be_consumed=self.traits.can_be_consumed,
             overcrowding_tolerance=self._mutate_value(self.traits.overcrowding_tolerance, 1),
             isolation_tolerance=self._mutate_value(self.traits.isolation_tolerance, 1),
             reproduction_threshold=self._mutate_value(self.traits.reproduction_threshold, 5),

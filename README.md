@@ -1,10 +1,11 @@
 # Primordial Garden
 
-An emergent life simulation combining cellular automata with genetic evolution. Watch colorful species evolve, compete, and adapt in real-time.
+An emergent life simulation combining cellular automata with genetic evolution. Watch colorful species evolve, compete, hunt, and adapt in real-time.
 
-**Now with two modes:**
+**Three game modes:**
 - **Classic Mode** (v0.1.0): Pure Conway's Life with species tracking
-- **Enhanced Mode** (v0.2.0): Energy system, environmental zones, mobility, and species designer!
+- **Enhanced Mode** (v0.2.0): Energy system, environmental zones, mobility
+- **Predator Mode** (v0.3.0): **Intelligent movement, predator/prey dynamics, live graphs!** 🦁
 
 ## Quick Start
 
@@ -25,9 +26,34 @@ chmod +x setup.sh
 # Classic Mode - Simple and fast
 run.bat  # or: python main.py
 
-# Enhanced Mode - Full features!
+# Enhanced/Predator Mode - Full ecosystem simulation!
 run_enhanced.bat  # or: python main_enhanced.py
 ```
+
+## What's New in v0.3.0 - The Predator Update 🦁
+
+### 1. Intelligent Movement
+Cells now have **strategic AI**:
+- **Energy Seeking**: Moves toward fertile zones
+- **Flee**: Detects and avoids predators  
+- **Hunt**: Actively pursues prey
+- **Random**: Classic random walk
+
+### 2. Predator/Prey System
+Complete food chain mechanics:
+- Predators consume adjacent prey
+- Energy transfer (configurable efficiency)
+- Prey death on consumption
+- New species presets: Predator & Seeker
+
+### 3. Real-Time Graphs
+Press **G** to toggle live visualization:
+- Population over time
+- Species diversity
+- Births/deaths/mutations
+- 500-generation history
+
+See `CHANGELOG_v0.3.0.md` for full details!
 
 ### Controls
 

@@ -142,10 +142,13 @@ class Grid:
         # Phase 2: Process movement (optional)
         self.process_movement()
         
-        # Phase 3: Process births and deaths (Conway-style with energy constraints)
+        # Phase 3: Predator hunting (if predators exist)
+        self.process_predation()
+        
+        # Phase 4: Process births and deaths (Conway-style with energy constraints)
         self.process_reproduction()
         
-        # Phase 4: Update species populations
+        # Phase 5: Update species populations
         self.species_registry.update_populations(self)
         
         return self.generation
@@ -169,7 +172,7 @@ class Grid:
                         cell.is_alive = False
     
     def process_movement(self):
-        """Allow mobile cells to move (simple random walk for now)"""
+        """Allow mobile cells to move with intelligent strategies"""
         # Collect all mobile cells first to avoid double-processing
         mobile_cells = []
         for y in range(self.height):
@@ -192,14 +195,27 @@ class Grid:
                 if zone.properties.can_enter and self.cells[ny][nx] is None:
                     valid_spots.append((nx, ny))
             
-            if valid_spots:
-                # Simple random movement for now (can be made smarter later)
-                new_x, new_y = random.choice(valid_spots)
-                
-                if cell.move_to(new_x, new_y, species):
-                    # Update grid
-                    self.cells[old_y][old_x] = None
-                    self.cells[new_y][new_x] = cell
+            if not valid_spots:
+                continue
+            
+            # Choose destination based on movement strategy
+            strategy = species.traits.movement_strategy
+            target_x, target_y = None, None
+            
+            if strategy == "energy_seeking":
+                target_x, target_y = self._move_energy_seeking(old_x, old_y, valid_spots)
+            elif strategy == "flee":
+                target_x, target_y = self._move_flee(old_x, old_y, valid_spots, species)
+            elif strategy == "hunt":
+                target_x, target_y = self._move_hunt(old_x, old_y, valid_spots, species)
+            else:  # "random"
+                target_x, target_y = random.choice(valid_spots)
+            
+            # Execute movement
+            if target_x is not None and cell.move_to(target_x, target_y, species):
+                # Update grid
+                self.cells[old_y][old_x] = None
+                self.cells[target_y][target_x] = cell
         
         # Reset movement flags
         for y in range(self.height):
@@ -207,6 +223,120 @@ class Grid:
                 cell = self.cells[y][x]
                 if cell and cell.is_alive:
                     cell.reset_movement()
+    
+    def _move_energy_seeking(self, x: int, y: int, valid_spots: List[Tuple[int, int]]) -> Tuple[int, int]:
+        """Move toward zones with better energy generation"""
+        current_zone = self.zone_manager.get_zone_at(x, y)
+        current_energy_mult = current_zone.properties.energy_generation_mult
+        
+        # Score each spot by energy potential
+        best_spot = None
+        best_score = current_energy_mult
+        
+        for nx, ny in valid_spots:
+            zone = self.zone_manager.get_zone_at(nx, ny)
+            score = zone.properties.energy_generation_mult - zone.properties.energy_decay_mult
+            
+            if score > best_score:
+                best_score = score
+                best_spot = (nx, ny)
+        
+        # If no better spot, move randomly
+        return best_spot if best_spot else random.choice(valid_spots)
+    
+    def _move_flee(self, x: int, y: int, valid_spots: List[Tuple[int, int]], species: Species) -> Tuple[int, int]:
+        """Move away from predators"""
+        # Find predators in neighborhood
+        predators_nearby = []
+        for nx, ny in self.get_neighbors(x, y):
+            neighbor = self.cells[ny][nx]
+            if neighbor and neighbor.is_alive:
+                neighbor_species = self.species_registry.get(neighbor.species_id)
+                if neighbor_species.traits.is_predator:
+                    predators_nearby.append((nx, ny))
+        
+        if not predators_nearby:
+            # No threat, move toward energy
+            return self._move_energy_seeking(x, y, valid_spots)
+        
+        # Move to spot farthest from predators
+        best_spot = None
+        best_distance = -1
+        
+        for nx, ny in valid_spots:
+            min_dist = min(abs(nx - px) + abs(ny - py) for px, py in predators_nearby)
+            if min_dist > best_distance:
+                best_distance = min_dist
+                best_spot = (nx, ny)
+        
+        return best_spot if best_spot else random.choice(valid_spots)
+    
+    def _move_hunt(self, x: int, y: int, valid_spots: List[Tuple[int, int]], species: Species) -> Tuple[int, int]:
+        """Move toward prey"""
+        # Find prey in extended neighborhood
+        prey_nearby = []
+        for nx, ny in self.get_neighbors(x, y):
+            neighbor = self.cells[ny][nx]
+            if neighbor and neighbor.is_alive:
+                neighbor_species = self.species_registry.get(neighbor.species_id)
+                if neighbor_species.traits.can_be_consumed and not neighbor_species.traits.is_predator:
+                    prey_nearby.append((nx, ny))
+        
+        if not prey_nearby:
+            # No prey, move toward energy
+            return self._move_energy_seeking(x, y, valid_spots)
+        
+        # Move to spot closest to prey
+        best_spot = None
+        best_distance = float('inf')
+        
+        for nx, ny in valid_spots:
+            min_dist = min(abs(nx - px) + abs(ny - py) for px, py in prey_nearby)
+            if min_dist < best_distance:
+                best_distance = min_dist
+                best_spot = (nx, ny)
+        
+        return best_spot if best_spot else random.choice(valid_spots)
+    
+    def process_predation(self):
+        """Handle predators consuming prey"""
+        predation_events = []  # (predator_cell, prey_x, prey_y)
+        
+        # Find all predators and check their neighbors for prey
+        for y in range(self.height):
+            for x in range(self.width):
+                cell = self.cells[y][x]
+                if cell and cell.is_alive:
+                    species = self.species_registry.get(cell.species_id)
+                    
+                    if species.traits.is_predator:
+                        # Look for prey in adjacent cells
+                        prey_neighbors = []
+                        for nx, ny in self.get_neighbors(x, y):
+                            neighbor = self.cells[ny][nx]
+                            if neighbor and neighbor.is_alive:
+                                neighbor_species = self.species_registry.get(neighbor.species_id)
+                                if neighbor_species.traits.can_be_consumed:
+                                    prey_neighbors.append((neighbor, nx, ny))
+                        
+                        # Attack one prey if available
+                        if prey_neighbors:
+                            prey_cell, px, py = random.choice(prey_neighbors)
+                            predation_events.append((cell, species, prey_cell, px, py))
+        
+        # Process predation events
+        for predator_cell, predator_species, prey_cell, px, py in predation_events:
+            if prey_cell.is_alive:  # Check if prey still alive (might be eaten by another predator)
+                prey_species = self.species_registry.get(prey_cell.species_id)
+                
+                # Consume prey
+                energy_gained = predator_cell.consume_prey(prey_cell, predator_species, prey_species)
+                
+                # Mark prey as dead and remove from grid
+                if not prey_cell.is_alive:
+                    self.cells[py][px] = None
+                    self.deaths_this_gen += 1
+                    prey_species.total_deaths += 1
     
     def process_reproduction(self):
         """Handle births and deaths based on Conway rules + energy"""

@@ -83,6 +83,20 @@ class Cell:
         """Reset movement flag for new generation"""
         self.has_moved_this_gen = False
     
+    def consume_prey(self, prey_cell, species, prey_species) -> int:
+        """Consume another cell and gain energy"""
+        if not self.is_alive or not prey_cell.is_alive:
+            return 0
+        
+        # Transfer energy from prey to predator
+        energy_gained = int(prey_cell.energy * species.traits.hunting_efficiency)
+        self.energy = min(self.max_energy, self.energy + energy_gained)
+        
+        # Kill the prey
+        prey_cell.is_alive = False
+        
+        return energy_gained
+    
     def get_color(self, species) -> Tuple[int, int, int]:
         """Get color with energy-based brightness"""
         base_color = species.traits.color

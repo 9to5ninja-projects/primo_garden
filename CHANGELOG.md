@@ -5,6 +5,43 @@ All notable changes to Primordial Garden will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-11-19 - The Predator Update 🦁
+
+### Added
+- **Intelligent Movement System**: 4 movement strategies for mobile cells
+  - `random` - Classic random walk (default)
+  - `energy_seeking` - Moves toward better energy zones
+  - `flee` - Detects and avoids predators
+  - `hunt` - Actively pursues prey
+- **Predator/Prey System**: Complete food chain mechanics
+  - New trait: `is_predator` - Species can consume other cells
+  - New trait: `hunting_efficiency` - Energy transfer rate (0.0-1.0)
+  - New trait: `can_be_consumed` - Protection from predation
+  - `consume_prey()` method in Cell class
+  - New simulation phase: `process_predation()`
+  - Energy transfer from prey to predator
+- **Real-Time Graphs**: Live visualization with matplotlib
+  - Press **G** to toggle graph window
+  - 4 panels: Population, Species Count, Events, Diversity
+  - 500-generation rolling window
+  - Auto-updates every frame
+  - New file: `visualization/live_graphs.py`
+- **New Species Presets**:
+  - Preset 5: Predator (hunts, low photosynthesis, red)
+  - Preset 6: Seeker (energy_seeking strategy, yellow)
+
+### Changed
+- Movement system completely rewritten with strategic AI
+- Simulation cycle now includes predation phase (between movement and reproduction)
+- Species mutation can now change predator status (5% chance)
+- Movement strategy rarely mutates (preserves behavioral consistency)
+
+### Technical
+- `Grid.process_movement()` now evaluates movement strategies
+- New methods: `_move_energy_seeking()`, `_move_flee()`, `_move_hunt()`
+- `SpeciesTraits` expanded with predator/movement fields
+- Predation events logged per generation
+
 ## [0.2.0] - 2025-11-19
 
 ### Added - Enhanced Mode (`main_enhanced.py`)
