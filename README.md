@@ -2,16 +2,31 @@
 
 An emergent life simulation combining cellular automata with genetic evolution. Watch colorful species evolve, compete, and adapt in real-time.
 
+**Now with two modes:**
+- **Classic Mode** (v0.1.0): Pure Conway's Life with species tracking
+- **Enhanced Mode** (v0.2.0): Energy system, environmental zones, mobility, and species designer!
+
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Windows
+setup.bat
 
-# Run the simulation
-python main.py
+# Linux/Mac
+chmod +x setup.sh
+./setup.sh
+```
+
+### Running
+
+```bash
+# Classic Mode - Simple and fast
+run.bat  # or: python main.py
+
+# Enhanced Mode - Full features!
+run_enhanced.bat  # or: python main_enhanced.py
 ```
 
 ### Controls
