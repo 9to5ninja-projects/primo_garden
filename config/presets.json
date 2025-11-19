@@ -1,0 +1,49 @@
+{
+  "presets": {
+    "primordial_soup": {
+      "grid_size": [200, 200],
+      "solar_radiation": 0.3,
+      "mutation_rate": 0.001,
+      "survival_range": [2, 3],
+      "birth_range": [3, 3],
+      "cosmic_events": 0.0,
+      "initial_density": 0.15
+    },
+    "volatile_garden": {
+      "grid_size": [300, 300],
+      "solar_radiation": 0.5,
+      "mutation_rate": 0.01,
+      "survival_range": [1, 4],
+      "birth_range": [2, 4],
+      "cosmic_events": 0.05,
+      "initial_density": 0.25
+    },
+    "stable_ecosystem": {
+      "grid_size": [250, 250],
+      "solar_radiation": 0.4,
+      "mutation_rate": 0.0005,
+      "survival_range": [2, 3],
+      "birth_range": [3, 3],
+      "cosmic_events": 0.0,
+      "initial_density": 0.2
+    },
+    "rapid_evolution": {
+      "grid_size": [150, 150],
+      "solar_radiation": 0.6,
+      "mutation_rate": 0.05,
+      "survival_range": [1, 5],
+      "birth_range": [2, 5],
+      "cosmic_events": 0.1,
+      "initial_density": 0.3
+    },
+    "minimal": {
+      "grid_size": [100, 100],
+      "solar_radiation": 0.3,
+      "mutation_rate": 0.002,
+      "survival_range": [2, 3],
+      "birth_range": [3, 3],
+      "cosmic_events": 0.0,
+      "initial_density": 0.1
+    }
+  }
+}
