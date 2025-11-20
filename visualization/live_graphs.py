@@ -125,8 +125,8 @@ class LiveGraphs:
         
         # Get the RGBA buffer from the figure
         w, h = self.fig.canvas.get_width_height()
-        buf = np.frombuffer(self.fig.canvas.tostring_rgb(), dtype=np.uint8)
-        buf = buf.reshape(h, w, 3)
+        buf = np.frombuffer(self.fig.canvas.buffer_rgba(), dtype=np.uint8)
+        buf = buf.reshape(h, w, 4)[:, :, :3]  # Drop alpha channel
         
         return buf
     

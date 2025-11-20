@@ -1,0 +1,106 @@
+[
+  {
+    "name": "Species_1",
+    "population": 100,
+    "traits": {
+      "base_energy": 100,
+      "energy_decay": 2,
+      "photosynthesis_rate": 3,
+      "complexity": 1,
+      "metabolic_efficiency": 1.0,
+      "heat_tolerance": 0.5,
+      "cold_tolerance": 0.5,
+      "toxin_resistance": 0.5,
+      "max_lifespan": 200,
+      "energy_source": "photosynthesis",
+      "starvation_threshold": 10,
+      "optimal_zone_bonus": 2.0,
+      "colonial_affinity": 1.2,
+      "cluster_reproduction_bonus": 1.3,
+      "hunting_efficiency": 0.5,
+      "color": [
+        61,
+        204,
+        61
+      ]
+    }
+  },
+  {
+    "name": "Species_2",
+    "population": 100,
+    "traits": {
+      "base_energy": 100,
+      "energy_decay": 2,
+      "photosynthesis_rate": 3,
+      "complexity": 1,
+      "metabolic_efficiency": 1.0,
+      "heat_tolerance": 0.5,
+      "cold_tolerance": 0.5,
+      "toxin_resistance": 0.5,
+      "max_lifespan": 200,
+      "energy_source": "photosynthesis",
+      "starvation_threshold": 10,
+      "optimal_zone_bonus": 2.0,
+      "colonial_affinity": 1.2,
+      "cluster_reproduction_bonus": 1.3,
+      "hunting_efficiency": 0.5,
+      "color": [
+        61,
+        204,
+        61
+      ]
+    }
+  },
+  {
+    "name": "Species_3",
+    "population": 100,
+    "traits": {
+      "base_energy": 100,
+      "energy_decay": 2,
+      "photosynthesis_rate": 3,
+      "complexity": 1,
+      "metabolic_efficiency": 1.0,
+      "heat_tolerance": 0.5,
+      "cold_tolerance": 0.5,
+      "toxin_resistance": 0.5,
+      "max_lifespan": 200,
+      "energy_source": "photosynthesis",
+      "starvation_threshold": 10,
+      "optimal_zone_bonus": 2.0,
+      "colonial_affinity": 1.2,
+      "cluster_reproduction_bonus": 1.3,
+      "hunting_efficiency": 0.5,
+      "color": [
+        61,
+        204,
+        61
+      ]
+    }
+  },
+  {
+    "name": "Species_4",
+    "population": 100,
+    "traits": {
+      "base_energy": 100,
+      "energy_decay": 2,
+      "photosynthesis_rate": 3,
+      "complexity": 1,
+      "metabolic_efficiency": 1.0,
+      "heat_tolerance": 0.5,
+      "cold_tolerance": 0.5,
+      "toxin_resistance": 0.5,
+      "max_lifespan": 200,
+      "energy_source": "photosynthesis",
+      "starvation_threshold": 10,
+      "optimal_zone_bonus": 2.0,
+      "colonial_affinity": 1.2,
+      "cluster_reproduction_bonus": 1.3,
+      "hunting_efficiency": 0.5,
+      "color": [
+        61,
+        204,
+        61
+      ]
+    }
+  }
+]

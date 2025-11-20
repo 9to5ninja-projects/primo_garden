@@ -35,6 +35,9 @@ class ZoneProperties:
     movement_cost_mult: float = 1.0
     can_enter: bool = True  # Some zones might be barriers
     
+    # Population limits (Phase 4: Carrying Capacity)
+    carrying_capacity: int = 50  # Max cells per zone before overcrowding
+    
     # Visual
     background_color: Tuple[int, int, int] = (20, 20, 20)
     
@@ -46,6 +49,7 @@ class ZoneProperties:
                 name="Fertile Plains",
                 energy_generation_mult=1.5,
                 energy_decay_mult=0.8,
+                carrying_capacity=120,  # Rich zone supports more life
                 background_color=(30, 40, 25)
             ),
             ZoneType.DESERT: ZoneProperties(
@@ -53,6 +57,7 @@ class ZoneProperties:
                 energy_generation_mult=0.5,
                 energy_decay_mult=1.5,
                 movement_cost_mult=1.3,
+                carrying_capacity=60,  # Harsh zone supports less life
                 background_color=(45, 40, 25)
             ),
             ZoneType.TOXIC: ZoneProperties(
@@ -60,10 +65,12 @@ class ZoneProperties:
                 energy_decay_mult=2.0,
                 mutation_rate_mult=3.0,
                 reproduction_cost_mult=1.5,
+                carrying_capacity=40,  # Very harsh, minimal capacity
                 background_color=(25, 45, 25)
             ),
             ZoneType.NEUTRAL: ZoneProperties(
                 name="Neutral Ground",
+                carrying_capacity=100,  # Standard capacity
                 background_color=(20, 20, 20)
             ),
             ZoneType.PARADISE: ZoneProperties(
@@ -72,11 +79,13 @@ class ZoneProperties:
                 energy_decay_mult=0.5,
                 reproduction_cost_mult=0.7,
                 mutation_rate_mult=0.5,
+                carrying_capacity=150,  # Paradise supports abundant life
                 background_color=(25, 30, 40)
             ),
             ZoneType.VOID: ZoneProperties(
                 name="The Void",
                 can_enter=False,
+                carrying_capacity=0,  # Nothing can live here
                 background_color=(0, 0, 0)
             )
         }
@@ -92,6 +101,7 @@ class Zone:
         self.width = width
         self.height = height
         self.properties = properties
+        self.grid = None  # Reference to grid for cell counting (set by ZoneManager)
     
     def contains(self, x: int, y: int) -> bool:
         """Check if coordinates are within this zone"""
@@ -101,6 +111,50 @@ class Zone:
     def get_center(self) -> Tuple[int, int]:
         """Get center coordinates of zone"""
         return (self.x + self.width // 2, self.y + self.height // 2)
+    
+    def get_cell_count(self) -> int:
+        """Count living cells in this zone (Phase 4: Carrying Capacity)"""
+        if not self.grid:
+            return 0
+        
+        count = 0
+        for y in range(self.y, min(self.y + self.height, len(self.grid.cells))):
+            for x in range(self.x, min(self.x + self.width, len(self.grid.cells[0]))):
+                cell = self.grid.cells[y][x]
+                if cell and cell.is_alive:
+                    count += 1
+        return count
+    
+    def get_population_pressure(self) -> float:
+        """Calculate population pressure multiplier (Phase 4: Carrying Capacity)
+        
+        Returns:
+            0.5-1.3x multiplier based on crowding
+            < 50% capacity: 1.3x (plenty of resources)
+            50-100% capacity: 1.0x (normal)
+            100-150% capacity: 0.8-1.0x (moderate pressure)
+            > 150% capacity: 0.5-0.8x (severe overcrowding)
+        """
+        if self.properties.carrying_capacity == 0:
+            return 0.0  # Void zones
+        
+        current_pop = self.get_cell_count()
+        capacity = self.properties.carrying_capacity
+        
+        if current_pop < capacity * 0.5:
+            # Plenty of room - bonus resources
+            return 1.3
+        elif current_pop < capacity:
+            # Normal density - smooth transition from 1.3 to 1.0
+            ratio = current_pop / capacity
+            return 1.3 - (ratio * 0.3)  # 1.3 at 0% to 1.0 at 100%
+        elif current_pop < capacity * 1.3:
+            # Moderate overcrowding - manageable penalty
+            overcrowding_ratio = (current_pop - capacity) / (capacity * 0.3)
+            return 1.0 - (overcrowding_ratio * 0.3)  # 1.0 at 100% to 0.7 at 130%
+        else:
+            # Severe overcrowding - harsh but survivable
+            return 0.6  # Minimum 60% energy (was 30%)
     
     def __repr__(self):
         return f"Zone({self.properties.name} at ({self.x},{self.y}) size {self.width}x{self.height})"
@@ -113,10 +167,58 @@ class ZoneManager:
         self.grid_width = grid_width
         self.grid_height = grid_height
         self.zones = []
+        self.generation = 0
+        self.shift_interval = 100  # Zones shift every N generations
+        self.shift_enabled = False
         
         # Default: entire grid is neutral
         self.default_zone = Zone(0, 0, grid_width, grid_height, 
                                 ZoneProperties.from_type(ZoneType.NEUTRAL))
+    
+    def enable_shifting(self, interval: int = 100):
+        """Enable environmental zone shifting"""
+        self.shift_enabled = True
+        self.shift_interval = interval
+    
+    def step(self):
+        """Advance generation and potentially shift zones"""
+        self.generation += 1
+        if self.shift_enabled and self.generation % self.shift_interval == 0:
+            self.shift_zones()
+    
+    def shift_zones(self):
+        """Gradually shift zone boundaries and types"""
+        if not self.zones:
+            return
+        
+        changes = []
+        for i, zone in enumerate(self.zones):
+            # Moderate chance to change zone type (30%)
+            if random.random() < 0.3:
+                zone_types = [ZoneType.FERTILE, ZoneType.DESERT, 
+                             ZoneType.TOXIC, ZoneType.PARADISE]
+                old_type = zone.properties.name
+                new_type = random.choice(zone_types)
+                zone.properties = ZoneProperties.from_type(new_type)
+                changes.append(f"Zone {i+1}: {old_type} -> {zone.properties.name}")
+            
+            # Higher chance to shift boundaries (70%)
+            if random.random() < 0.7:
+                dx = random.randint(-8, 8)
+                dy = random.randint(-8, 8)
+                zone.x = max(0, min(self.grid_width - zone.width, zone.x + dx))
+                zone.y = max(0, min(self.grid_height - zone.height, zone.y + dy))
+            
+            # Change size more frequently (60%)
+            if random.random() < 0.6:
+                dw = random.randint(-8, 8)
+                dh = random.randint(-8, 8)
+                zone.width = max(15, min(80, zone.width + dw))
+                zone.height = max(15, min(80, zone.height + dh))
+        
+        if changes:
+            print("  Zone transformations:", ", ".join(changes))
+        return len(changes)
     
     def add_zone(self, zone: Zone):
         """Add a zone (later zones override earlier ones)"""

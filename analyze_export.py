@@ -20,10 +20,10 @@ def analyze_simulation(csv_path):
     print(f"\nTotal generations: {len(df)}")
     print(f"Generation range: {df['generation'].min()} - {df['generation'].max()}")
     print(f"\nPopulation stats:")
-    print(f"  Min: {df['total_population'].min()}")
-    print(f"  Max: {df['total_population'].max()}")
-    print(f"  Mean: {df['total_population'].mean():.1f}")
-    print(f"  Final: {df['total_population'].iloc[-1]}")
+    print(f"  Min: {df['population'].min()}")
+    print(f"  Max: {df['population'].max()}")
+    print(f"  Mean: {df['population'].mean():.1f}")
+    print(f"  Final: {df['population'].iloc[-1]}")
     
     print(f"\nSpecies stats:")
     print(f"  Min: {df['species_count'].min()}")
@@ -31,7 +31,7 @@ def analyze_simulation(csv_path):
     print(f"  Final: {df['species_count'].iloc[-1]}")
     
     # Calculate species/population ratio
-    df['species_ratio'] = df['species_count'] / df['total_population']
+    df['species_ratio'] = df['species_count'] / df['population']
     print(f"\nSpecies/Population ratio:")
     print(f"  Start: {df['species_ratio'].iloc[0]:.3f}")
     print(f"  End: {df['species_ratio'].iloc[-1]:.3f}")
@@ -47,14 +47,16 @@ def analyze_simulation(csv_path):
         print(f"  Mutations: {df['mutations'].iloc[-1]}")
         print(f"  Avg species age: {df['avg_species_age'].iloc[-1]:.1f} generations")
     
-    print(f"\nDiversity stats:")
-    print(f"  Min Shannon index: {df['diversity_index'].min():.3f}")
-    print(f"  Max Shannon index: {df['diversity_index'].max():.3f}")
-    print(f"  Final: {df['diversity_index'].iloc[-1]:.3f}")
+    # Diversity index might not exist in older exports
+    if 'diversity_index' in df.columns:
+        print(f"\nDiversity stats:")
+        print(f"  Min Shannon index: {df['diversity_index'].min():.3f}")
+        print(f"  Max Shannon index: {df['diversity_index'].max():.3f}")
+        print(f"  Final: {df['diversity_index'].iloc[-1]:.3f}")
     
     # Detect if in oscillator state
     recent = df.tail(50)
-    pop_std = recent['total_population'].std()
+    pop_std = recent['population'].std()
     if pop_std < 5:
         print(f"\n⚠ STABLE OSCILLATOR DETECTED")
         print(f"  Population variance (last 50 gen): {pop_std:.2f}")
@@ -68,7 +70,7 @@ def analyze_simulation(csv_path):
     ax1 = axes[0]
     ax1_twin = ax1.twinx()
     
-    ax1.plot(df['generation'], df['total_population'], 'b-', label='Population', linewidth=2)
+    ax1.plot(df['generation'], df['population'], 'b-', label='Population', linewidth=2)
     ax1_twin.plot(df['generation'], df['species_count'], 'r-', label='Species', linewidth=2)
     
     ax1.set_xlabel('Generation')
@@ -89,12 +91,21 @@ def analyze_simulation(csv_path):
     ax2.grid(True, alpha=0.3)
     ax2.legend()
     
-    # Plot 3: Diversity Index
+    # Plot 3: Diversity Index (if available)
     ax3 = axes[2]
-    ax3.plot(df['generation'], df['diversity_index'], 'm-', linewidth=2)
-    ax3.set_xlabel('Generation')
-    ax3.set_ylabel('Shannon Diversity Index')
-    ax3.set_title('Species Diversity Over Time')
+    if 'diversity_index' in df.columns:
+        ax3.plot(df['generation'], df['diversity_index'], 'm-', linewidth=2)
+        ax3.set_xlabel('Generation')
+        ax3.set_ylabel('Shannon Diversity Index')
+        ax3.set_title('Species Diversity Over Time')
+    else:
+        # Plot births/deaths instead
+        ax3.plot(df['generation'], df['births'], 'g-', label='Births', linewidth=2)
+        ax3.plot(df['generation'], df['deaths'], 'r-', label='Deaths', linewidth=2)
+        ax3.set_xlabel('Generation')
+        ax3.set_ylabel('Events per Generation')
+        ax3.set_title('Births & Deaths Over Time')
+        ax3.legend()
     ax3.grid(True, alpha=0.3)
     
     plt.tight_layout()

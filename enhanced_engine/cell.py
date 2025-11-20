@@ -22,19 +22,61 @@ class Cell:
         self.has_moved_this_gen = False
         self.move_history = []  # Track last N positions
         
-    def age_one_generation(self, species, zone_modifier: float = 1.0):
-        """Process one generation tick - decay energy and age"""
+    def age_one_generation(self, species, zone_modifier: float = 1.0, zone_type: str = "neutral", 
+                          has_prey_nearby: bool = False, population_pressure: float = 1.0):
+        """Process one generation tick - decay energy and age
+        
+        Args:
+            species: Species traits
+            zone_modifier: Zone energy multiplier
+            zone_type: Type of zone for adaptation
+            has_prey_nearby: Whether prey is available (for predators)
+            population_pressure: Carrying capacity multiplier (0.2-1.2x)
+        """
         self.age += 1
         
-        # Energy decay
-        decay = int(species.traits.energy_decay * zone_modifier)
+        # Check for old age death
+        if species.traits.max_lifespan > 0 and self.age >= species.traits.max_lifespan:
+            self.is_alive = False
+            return False
+        
+        # Get adaptation bonus based on environment
+        adaptation_mult = species.traits.get_adaptation_bonus(zone_type)
+        
+        # Apply complexity cost (more complex = more energy needed)
+        complexity_cost = species.traits.get_complexity_cost()
+        
+        # Calculate aging penalty
+        aging_penalty = 1.0
+        if species.traits.max_lifespan > 0:
+            age_ratio = self.age / species.traits.max_lifespan
+            if age_ratio > species.traits.age_decline_start:
+                # Linear decline after age threshold
+                decline = (age_ratio - species.traits.age_decline_start) / (1.0 - species.traits.age_decline_start)
+                aging_penalty = 1.0 + decline * 0.5  # Up to 50% more energy cost
+        
+        # Energy decay (increased by complexity, aging, modified by zone and adaptation)
+        decay = int(species.traits.energy_decay * zone_modifier * complexity_cost * aging_penalty / adaptation_mult)
         self.energy = max(0, self.energy - decay)
         
-        # Photosynthesis/energy generation
-        gain = int(species.traits.photosynthesis_rate * zone_modifier)
+        # Energy gain based on food source availability
+        food_mult = species.traits.get_energy_source_multiplier(has_prey_nearby)
+        
+        # Check if in optimal zone for bonus
+        zone_bonus = species.traits.optimal_zone_bonus if species.traits.is_optimal_zone(zone_type) else 1.0
+        
+        # Photosynthesis/energy generation (boosted by adaptation, food, optimal zone, POPULATION PRESSURE)
+        gain = int(species.traits.photosynthesis_rate * zone_modifier * adaptation_mult * 
+                  food_mult * zone_bonus * population_pressure / species.traits.metabolic_efficiency)
         self.energy = min(self.max_energy, self.energy + gain)
         
-        # Death by starvation
+        # Death by starvation (harsh penalty outside optimal zone)
+        if not species.traits.is_optimal_zone(zone_type):
+            if self.energy < species.traits.starvation_threshold:
+                self.is_alive = False
+                return False
+        
+        # Standard starvation
         if self.energy <= 0:
             self.is_alive = False
             return False
@@ -53,9 +95,8 @@ class Cell:
         return cost // 2  # Offspring gets half the energy spent
     
     def can_move(self, species) -> bool:
-        """Check if cell can afford to move"""
+        """Check if cell can afford to move (ALL organisms can move)"""
         return (self.is_alive and 
-                species.traits.can_move and 
                 not self.has_moved_this_gen and
                 self.energy >= species.traits.movement_cost)
     
@@ -99,13 +140,13 @@ class Cell:
     
     def get_color(self, species) -> Tuple[int, int, int]:
         """Get color with energy-based brightness"""
+        from .colorization import SpeciesColorizer
+        
         base_color = species.traits.color
         
-        # Dim color based on energy level
+        # Apply energy-based dimming
         energy_pct = self.energy / self.max_energy
-        brightness = 0.4 + (0.6 * energy_pct)  # Range from 40% to 100% brightness
-        
-        return tuple(int(c * brightness) for c in base_color)
+        return SpeciesColorizer.apply_energy_dimming(base_color, energy_pct)
     
     def __repr__(self):
         return f"Cell(pos=({self.x},{self.y}), species={self.species_id}, energy={self.energy}, alive={self.is_alive})"
